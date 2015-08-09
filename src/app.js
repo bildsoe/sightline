@@ -9,7 +9,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var connectionString = 'postgres://postgres:1234@localhost:5432/regApp';
+var connectionString = 'postgres://postgres:1234@localhost:5432/aarhus';
 
 var getForms = (req, res) => {
 
@@ -51,35 +51,31 @@ console.log('logged into db');
 //Set up static directory for serving static html
 
 
-//Routing
-var router = express.Router();
+//API Routing
+var apiRouter = express.Router();
 
-router.use(function(req, res, next) {
+apiRouter.use(function(req, res, next) {
   console.log('Something is happening.');
   next(); // make sure we go to the next routes and don't stop here
 });
 
-router.route('/Form')
-  .get(getForms);
-
-router.route('/Form/:id')
-  .get(getForms);
-
-app.use('/api', router);
+apiRouter.route('/sightline')
+  .get(function (req, res) {
+    res.send("YES");
+  });
 
 
-app.get('/', function(req, res) {
-  res.sendFile(__dirname + '/views/home.html');
-});
+app.use('/api', apiRouter);
 
-app.get('/partials/:name', function (req, res) {
-  var name = req.params.name;
-  res.sendFile(__dirname + '/views/partials/' + name);
-});
+var viewRouter = express.Router();
 
-app.get('*', function(req, res) {
-  res.redirect('/');
-});
+viewRouter.route('/')
+  .get(function (req, res) {
+    res.sendFile(__dirname + '/public/index.html');
+  });
+
+//app.use('/', viewRouter);
+
 
 //Start server
 app.listen(3000);

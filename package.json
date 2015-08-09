@@ -3,9 +3,11 @@
   "version": "0.0.1",
   "description": "Utility for showing sightlines on map",
   "main": "dist/app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/npm/npm.git"
   },
+  "scripts": {},
   "keywords": [
     "Nodejs",
     "Express",
@@ -16,6 +18,17 @@
   "author": "Thomas Moltzen-Bildsoe",
   "license": "ISC",
   "devDependencies": {
-    "babel-core": "^5.8.21"
+    "babel-core": "^5.8.21",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.2.0",
+    "gulp-clean": "^0.3.1"
+  },
+  "dependencies": {
+    "body-parser": "^1.13.3",
+    "bootstrap": "^3.3.5",
+    "express": "^4.13.3",
+    "jquery": "^2.1.4",
+    "openlayers": "^3.8.2",
+    "pg": "^4.4.1"
   }
 }
