@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var pg = require('pg');
+var multiline = require('multiline');
 
 var bodyParser = require('body-parser');
 
@@ -11,7 +12,7 @@ app.use(bodyParser.json());
 
 var connectionString = 'postgres://postgres:1234@localhost:5432/aarhus';
 
-var getForms = (req, res) => {
+var get3Dline = (req, res) => {
 
   var forms = [];
   var where = '';
@@ -22,14 +23,32 @@ var getForms = (req, res) => {
       return console.error('error fetching client from pool', err);
     }
 
+var str = multiline(function(){/*
+WITH line AS
+    -- From an arbitrary line
+    (SELECT 'SRID=25832;LINESTRING (574785 6225847,575213 6224757)'::geometry AS geom),
+  linemesure AS
+    -- Add a mesure dimension to extract steps
+    (SELECT ST_AddMeasure(line.geom, 0, ST_Length(line.geom)) as linem,
+            generate_series(0, ST_Length(line.geom)::int, 50) as i
+     FROM line),
+  points2d AS
+    (SELECT ST_GeometryN(ST_LocateAlong(linem, i), 1) AS geom FROM linemesure),
+  cells AS
+    -- Get DEM elevation for each
+    (SELECT p.geom AS geom, ST_Value(mnt.rast, 1, p.geom) AS val
+     FROM mnt, points2d p
+     WHERE ST_Intersects(mnt.rast, p.geom)),
+    -- Instantiate 3D points
+  points3d AS
+    (SELECT ST_SetSRID(ST_MakePoint(ST_X(geom), ST_Y(geom), val), 25832) AS geom FROM cells)
+-- Build 3D line from 3D points
+SELECT ST_astext(ST_MakeLine(geom)) FROM points3d
+*/});
 
-    if(req.params.hasOwnProperty('id')){
-      console.log("no")
-      where = " where id=" + req.params.id;
-    }
 
     // SQL Query > Select Data
-    var query = client.query('SELECT * FROM reg1.form1' + where);
+    var query = client.query(str);
 
     // Stream results back one row at a time
     query.on('row', function(row) {
@@ -54,27 +73,16 @@ console.log('logged into db');
 //API Routing
 var apiRouter = express.Router();
 
-apiRouter.use(function(req, res, next) {
+apiRouter.use((req, res, next) => {
   console.log('Something is happening.');
   next(); // make sure we go to the next routes and don't stop here
 });
 
 apiRouter.route('/sightline')
-  .get(function (req, res) {
-    res.send("YES");
-  });
-
+  .post(get3Dline);
 
 app.use('/api', apiRouter);
 
-var viewRouter = express.Router();
-
-viewRouter.route('/')
-  .get(function (req, res) {
-    res.sendFile(__dirname + '/public/index.html');
-  });
-
-//app.use('/', viewRouter);
 
 
 //Start server

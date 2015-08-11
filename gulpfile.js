@@ -1,8 +1,9 @@
 var gulp = require('gulp');
 var clean = require('gulp-clean');
 var babel = require('gulp-babel');
+var watch = require('gulp-watch');
 
-gulp.task('default', ['transpiling'], function () {});
+gulp.task('default', ['watch'], function () {});
 
 gulp.task('transpiling',['copy'], function () {
   return gulp.src('src/app.js')
@@ -26,3 +27,10 @@ gulp.task('clean', function () {
   return gulp.src('dist', {read: false})
     .pipe(clean());
 });
+
+gulp.task('watch', ['transpiling'], function () {
+   gulp.watch('src/views/*.html', ['default']);
+   gulp.watch('src/js/*.js', ['default']);
+});
+
+
