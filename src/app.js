@@ -23,14 +23,18 @@ var get3Dline = (req, res) => {
       return console.error('error fetching client from pool', err);
     }
 
-var str = multiline(function(){/*
+var str1 = multiline(function(){/*
 WITH line AS
     -- From an arbitrary line
-    (SELECT 'SRID=25832;LINESTRING (574785 6225847,575213 6224757)'::geometry AS geom),
+    (SELECT 'SRID=25832;
+*/});    
+    
+var str2 = multiline(function(){/*    
+    '::geometry AS geom),
   linemesure AS
     -- Add a mesure dimension to extract steps
     (SELECT ST_AddMeasure(line.geom, 0, ST_Length(line.geom)) as linem,
-            generate_series(0, ST_Length(line.geom)::int, 50) as i
+            generate_series(0, ST_Length(line.geom)::int, 10) as i
      FROM line),
   points2d AS
     (SELECT ST_GeometryN(ST_LocateAlong(linem, i), 1) AS geom FROM linemesure),
@@ -43,12 +47,11 @@ WITH line AS
   points3d AS
     (SELECT ST_SetSRID(ST_MakePoint(ST_X(geom), ST_Y(geom), val), 25832) AS geom FROM cells)
 -- Build 3D line from 3D points
-SELECT ST_astext(ST_MakeLine(geom)) FROM points3d
+SELECT val,ST_X(geom) as ptX,ST_Y(geom) as ptY FROM cells
 */});
 
-
     // SQL Query > Select Data
-    var query = client.query(str);
+    var query = client.query(str1 + req.body.data + str2);
 
     // Stream results back one row at a time
     query.on('row', function(row) {

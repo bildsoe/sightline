@@ -19,8 +19,7 @@ gulp.task('copy',['clean'], function () {
   gulp.src('node_modules/bootstrap/dist/**/*').pipe(gulp.dest('dist/public/vendor/bootstrap'));
   gulp.src('node_modules/openlayers/dist/*.*').pipe(gulp.dest('dist/public/vendor/openlayers'));
   gulp.src('node_modules/jquery/dist/*.*').pipe(gulp.dest('dist/public/vendor/jquery'));
-
-
+  gulp.src('node_modules/proj4/dist/*.*').pipe(gulp.dest('dist/public/vendor/proj4'));
 });
 
 gulp.task('clean', function () {
