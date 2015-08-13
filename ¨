@@ -39,7 +39,9 @@ var NIRAS = (function(){
   });
 
   var lastFeature;
-  
+  var removeLastFeature = function () {
+    if (lastFeature) source.removeFeature(lastFeature);
+  };
 
   var draw = new ol.interaction.Draw({
     source: source,
@@ -80,59 +82,26 @@ var NIRAS = (function(){
 
       var wkt = format.writeFeature(modifiedFeature);
 
+      console.log(wkt);
+
       $.post( "http://localhost:3000/api/sightline", { data: wkt })
         .done(function( data ) {
-          //console.log(data);
+          console.log(data);
 
           var mySeries = [];
           for (var i = 0; i < data.length; i++) {
-              mySeries.push({"y":data[i].val,"ptx":data[i].ptx,"pty":data[i].pty});
+              mySeries.push([i, data[i].val,{test:"test"}]);
           }
-            
-          var sourceClosestPoint = new ol.source.Vector();
 
-          var vectorPt = new ol.layer.Vector({
-            source: sourceClosestPoint,
-            style: new ol.style.Style({
-              fill: new ol.style.Fill({
-                color: 'rgba(255, 255, 255, 0.2)'
-              }),
-              stroke: new ol.style.Stroke({
-                color: '#ffcc33',
-                width: 2
-              }),
-              image: new ol.style.Circle({
-                radius: 10,
-                fill: new ol.style.Fill({
-                  color: '#ffcc33'
-                })
-              })
-            })
-          });
-          
-          map.addLayer(vectorPt);
-            
           $('#container').highcharts({
             chart: {},
-            title: {text: "Profil over Århus"},
             plotOptions: {
               series: {
                 cursor: 'pointer',
                 point: {
                   events: {
-                    mouseOver: function () {
-                     
-                      var pt = new ol.geom.Point([this.ptx, this.pty]);
-                      pt.transform('EPSG:25832', 'EPSG:3857');
-                      
-                      var featurething = new ol.Feature({
-                        name: "Point",
-                        geometry: pt
-                      });
-                      
-                      sourceClosestPoint.clear();
-                      sourceClosestPoint.addFeature( featurething );
-                      
+                    click: function () {
+                      location.href = this.options.url;
                     }
                   }
                 }

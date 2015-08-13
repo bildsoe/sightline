@@ -68,7 +68,7 @@ SELECT val,ST_X(geom) as ptX,ST_Y(geom) as ptY FROM cells
   
 };
 
-console.log('logged into db');
+console.log('logged into db from client');
 
 //Set up static directory for serving static html
 
