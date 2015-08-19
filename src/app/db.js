@@ -1,21 +1,11 @@
-var express = require('express');
-var app = express();
 var pg = require('pg');
 var multiline = require('multiline');
-
-var bodyParser = require('body-parser');
-
-app.use(express.static(__dirname + '/public'));
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
 
 var connectionString = 'postgres://postgres:1234@localhost:5432/aarhus';
 
 var get3Dline = (req, res) => {
 
   var forms = [];
-  var where = '';
 
   pg.connect(connectionString, (err, client, done) => {
   
@@ -68,29 +58,37 @@ SELECT val,ST_X(geom) as ptX,ST_Y(geom) as ptY FROM cells
   
 };
 
-console.log('logged into db from client');
+var getNode = () => {
+  //TODO return node ID from point - to be used in the calculation of route
+}
 
-//Set up static directory for serving static html
+var getRoute = (req, res) => {
 
+  var forms = [];
 
-//API Routing
-var apiRouter = express.Router();
+  pg.connect(connectionString, (err, client, done) => {
+  
+    if(err) {
+      return console.error('error fetching client from pool', err);
+    }
 
-apiRouter.use((req, res, next) => {
-  console.log('Something is happening.');
-  next(); // make sure we go to the next routes and don't stop here
-});
+    var str1 = "SELECT seq, id1 AS node, id2 AS edge, cost, wkb_geometry FROM pgr_dijkstra('SELECT ogc_fid as id, source, target, st_length(wkb_geometry) as cost FROM public.roads',(SELECT id::integer FROM roads_vertices_pgr ORDER BY the_geom <-> ( SELECT ST_Transform(ST_SetSRID(ST_Point(1135423.917,7595561.637),900913),25832) limit 1)  LIMIT 1), (SELECT id::integer FROM roads_vertices_pgr ORDER BY the_geom <-> ( SELECT ST_Transform(ST_SetSRID(ST_Point(1133590.701,7583942.080),900913),25832) limit 1)  LIMIT 1), false, false) as di JOIN public.roads pt ON di.id2 = pt.ogc_fid ;";
 
-apiRouter.route('/sightline')
-  .post(get3Dline);
+    // SQL Query > Select Data
+    var query = client.query(str1);
 
-app.use('/api', apiRouter);
+    // Stream results back one row at a time
+    query.on('row', function(row) {
+        forms.push(row);
+    });
 
+    // After all data is returned, close connection and return results
+    query.on('end', function() {
+        client.end();
+        return res.json(forms);
+    });
 
+  });
+};
 
-//Start server
-app.listen(3000);
-console.log('Server startet on port 3000');
-
-
-
+module.exports = {"get3Dline":get3Dline,"getRoute":getRoute};

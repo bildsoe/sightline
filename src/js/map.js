@@ -5,7 +5,7 @@ var NIRAS = (function(){
   var raster = new ol.layer.Tile({
     source: new ol.source.OSM({layer: 'sat'})
   });
-
+  
   var source = new ol.source.Vector();
 
   var vector = new ol.layer.Vector({
@@ -65,8 +65,57 @@ var NIRAS = (function(){
       source.clear();
       map.removeInteraction(draw);
     });
-
+    
     $('.load').on('click', function () {
+      map.removeInteraction(draw);
+      createProfile();
+    });
+    $('.startRoute').on('click', function () {
+      source.clear();
+      map.removeInteraction(draw);
+      map.addInteraction(draw);
+    });
+
+    $('.resetRoute').on('click', function () {
+      source.clear();
+      map.removeInteraction(draw);
+    });
+    
+    $('.getRoute').on('click', function () {
+      map.removeInteraction(draw);
+      getRoute();
+    });
+
+  }
+
+  var getRoute = function () {
+      map.removeInteraction(draw);
+      //Load API
+
+      console.log(lastFeature);
+      
+      var modifiedFeature = lastFeature.clone();
+
+      modifiedFeature.getGeometry().transform('EPSG:3857', 'EPSG:25832');
+
+      console.log(modifiedFeature.getGeometry().getLength());
+
+      var wkt = format.writeFeature(modifiedFeature);
+
+      $.post( "http://localhost:3000/api/getRoute", { data: wkt })
+        .done(function( data ) {
+            console.log(data);
+
+            //TODO implement functionality for displaying returned route - refactor getRoute to 
+            //use the last returned node ID to ensure continuation of path. When adding a point
+            //this function should find the next section using routing, and add it to layer. 
+            //Create different ol.interactions for the functions. 
+        })
+        .fail(function( err ){console.log(err)});
+
+  };
+
+  var createProfile = function () {
       map.removeInteraction(draw);
       //Load API
 
@@ -105,6 +154,7 @@ var NIRAS = (function(){
                 radius: 10,
                 fill: new ol.style.Fill({
                   color: '#ffcc33'
+                  
                 })
               })
             })
@@ -114,7 +164,7 @@ var NIRAS = (function(){
             
           $('#container').highcharts({
             chart: {},
-            title: {text: "Profil over Ã…rhus"},
+            title: {text: "Profil over Århus"},
             plotOptions: {
               series: {
                 cursor: 'pointer',
@@ -148,12 +198,9 @@ var NIRAS = (function(){
           console.log(err);
         });
       
-    });
-
   };
  
   initButtons();
-
 
   return {
    "map": map
