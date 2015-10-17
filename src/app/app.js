@@ -1,4 +1,4 @@
-var express = require('express');
+﻿var express = require('express');
 var app = express();
 var db = require('./db');
 
@@ -8,11 +8,6 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
-
-
-
-
 
 console.log('logged into db from client');
 
@@ -41,7 +36,7 @@ app.use('/api', apiRouter);
 
 
 //Start server
-app.listen(3000);
+app.listen(8000);
 console.log('Server startet on port 3000');
 
 

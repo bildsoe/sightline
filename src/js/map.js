@@ -1,4 +1,4 @@
-
+﻿
 var NIRAS = (function(){
   proj4.defs("EPSG:25832","+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
   
@@ -6,25 +6,28 @@ var NIRAS = (function(){
     source: new ol.source.OSM({layer: 'sat'})
   });
   
-  var source = new ol.source.Vector();
-
-  var vector = new ol.layer.Vector({
-    source: source,
-    style: new ol.style.Style({
+  var source = new ol.source.Vector(),
+      sourceRoute = new ol.source.Vector();
+  
+  var style = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 255, 255, 0.2)'
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#ffcc33',
+      width: 2
+    }),
+    image: new ol.style.Circle({
+      radius: 7,
       fill: new ol.style.Fill({
-        color: 'rgba(255, 255, 255, 0.2)'
-      }),
-      stroke: new ol.style.Stroke({
-        color: '#ffcc33',
-        width: 2
-      }),
-      image: new ol.style.Circle({
-        radius: 7,
-        fill: new ol.style.Fill({
-          color: '#ffcc33'
-        })
+        color: '#ffcc33'
       })
     })
+  });
+  
+  var vector = new ol.layer.Vector({
+    source: source,
+    style: style 
   });
   
   var format = new ol.format.WKT();
@@ -40,7 +43,6 @@ var NIRAS = (function(){
 
   var lastFeature;
   
-
   var draw = new ol.interaction.Draw({
     source: source,
     type: 'LineString'
@@ -78,6 +80,7 @@ var NIRAS = (function(){
 
     $('.resetRoute').on('click', function () {
       source.clear();
+      sourceRoute.clear();
       map.removeInteraction(draw);
     });
     
@@ -98,18 +101,33 @@ var NIRAS = (function(){
 
       modifiedFeature.getGeometry().transform('EPSG:3857', 'EPSG:25832');
 
-      console.log(modifiedFeature.getGeometry().getLength());
-
-      var wkt = format.writeFeature(modifiedFeature);
-
-      $.post( "http://localhost:3000/api/getRoute", { data: wkt })
+      var featureArr = modifiedFeature.getGeometry().getCoordinates();
+      
+      var routeArr = [featureArr[0],featureArr[featureArr.length-1]];
+      
+      $.post( "http://localhost:3000/api/getRoute", { data: routeArr })
         .done(function( data ) {
-            console.log(data);
+            
+          sourceRoute.clear();
+          
+          console.log(data);
+          
+          var formatRoute = new ol.format.WKT(),
+            geom  = data.map(function (obj) {
+              return obj.st_astext;
+            }),
+            layerRoute = new ol.layer.Vector({
+              source: sourceRoute,
+              style: style 
+            });
 
-            //TODO implement functionality for displaying returned route - refactor getRoute to 
-            //use the last returned node ID to ensure continuation of path. When adding a point
-            //this function should find the next section using routing, and add it to layer. 
-            //Create different ol.interactions for the functions. 
+          geom.forEach(function (feat){
+            var routeFeat = formatRoute.readFeature(feat,{dataProjection:'EPSG:25832',featureProjection:'EPSG:3857'});
+            sourceRoute.addFeature(routeFeat);
+          })
+          
+          map.addLayer(layerRoute);
+            
         })
         .fail(function( err ){console.log(err)});
 
@@ -131,8 +149,7 @@ var NIRAS = (function(){
 
       $.post( "http://localhost:3000/api/sightline", { data: wkt })
         .done(function( data ) {
-          //console.log(data);
-
+          
           var mySeries = [];
           for (var i = 0; i < data.length; i++) {
               mySeries.push({"y":data[i].val,"ptx":data[i].ptx,"pty":data[i].pty});
@@ -164,7 +181,7 @@ var NIRAS = (function(){
             
           $('#container').highcharts({
             chart: {},
-            title: {text: "Profil over �rhus"},
+            title: {text: "Profil over Århus"},
             plotOptions: {
               series: {
                 cursor: 'pointer',

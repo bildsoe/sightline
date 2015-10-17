@@ -19,7 +19,7 @@ var options = {
         }
     },
     bs: {
-        proxy: 'http://localhost:3000'
+        proxy: 'http://localhost:8000'
     }
 };
 
