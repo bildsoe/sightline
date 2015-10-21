@@ -84,13 +84,13 @@ var getRoute = (req, res) => {
       return console.error('error fetching client from pool', err);
     }
     
-    /*
+    
     var roads = "public.roads";
     var vertices = "roads_vertices_pgr";
-    */
     
-    var roads = "public.vejman_aarhus";
-    var vertices = "vejman_aarhus_vertices_pgr";
+    
+    //var roads = "public.vejman_aarhus";
+    //var vertices = "vejman_aarhus_vertices_pgr";
     
     
     

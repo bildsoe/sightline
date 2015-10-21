@@ -105,6 +105,24 @@ var NIRAS = (function(){
       
       var routeArr = [featureArr[0],featureArr[featureArr.length-1]];
       
+      console.log(routeArr);
+
+      var pairs = [];
+
+      for(var i = 1, top = featureArr.length; i < top; i++){
+        pairs.push($.post( "http://localhost:3000/api/getRoute", { data: [featureArr[i-1], featureArr[i]] }));
+      }
+
+      console.log(pairs);
+
+      //Promise-based code that returns all pairs
+      $.when.apply($, pairs).then(function(routes) {
+        console.log("DONE", this, routes);
+      }, function(e) {
+        console.log("My ajax failed");
+      });
+
+
       $.post( "http://localhost:3000/api/getRoute", { data: routeArr })
         .done(function( data ) {
             
