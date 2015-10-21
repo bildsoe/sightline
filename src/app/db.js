@@ -63,12 +63,12 @@ var getNode = () => {
 
 var getRoute = (req, res) => {
   
+  //console.log(req.body.data[0]);
+  
   var forms = [],
+      pairedPts = [],
       pt1 = req.body.data[0].reduce((a, b) => {return a.toString() + "," + b.toString()}),
       pt2 = req.body.data[1].reduce((a, b) => {return a.toString() + "," + b.toString()});
-  
-  
-  var pairedPts = [];
   
   req.body.data.forEach( function (entry, index) {
     if(index < req.body.data.length - 1){
@@ -76,25 +76,17 @@ var getRoute = (req, res) => {
     }
   })
   
-  console.log(pairedPts);
-  
   pg.connect(connectionString, (err, client, done) => {
   
     if(err) {
       return console.error('error fetching client from pool', err);
     }
     
+    //var roads = "public.roads";
+    //var vertices = "roads_vertices_pgr";
     
-    var roads = "public.roads";
-    var vertices = "roads_vertices_pgr";
-    
-    
-    //var roads = "public.vejman_aarhus";
-    //var vertices = "vejman_aarhus_vertices_pgr";
-    
-    
-    
-    
+    var roads = "public.vejman_aarhus";
+    var vertices = "vejman_aarhus_vertices_pgr";
     
     var str1 = "SELECT seq, id1 AS node, id2 AS edge, cost, ST_AsText(wkb_geometry) FROM pgr_dijkstra('SELECT ogc_fid as id, source, target, st_length(wkb_geometry) as cost FROM " + roads + "',(SELECT id::integer FROM " + vertices + " ORDER BY the_geom <-> ( SELECT ST_SetSRID(ST_Point(" + pt1 + "),25832) limit 1)  LIMIT 1), (SELECT id::integer FROM " + vertices + " ORDER BY the_geom <-> ( SELECT ST_SetSRID(ST_Point(" + pt2 + "),25832) limit 1)  LIMIT 1), false, false) as di JOIN " + roads + " pt ON di.id2 = pt.ogc_fid ;";
 
@@ -108,6 +100,9 @@ var getRoute = (req, res) => {
 
     // After all data is returned, close connection and return results
     query.on('end', () => {
+        
+        console.log(forms.length);
+        
         client.end();
         return res.json(forms);
     });

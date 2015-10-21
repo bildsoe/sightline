@@ -92,62 +92,72 @@ var NIRAS = (function(){
   }
 
   var getRoute = function () {
-      map.removeInteraction(draw);
-      //Load API
-
-      console.log(lastFeature);
       
-      var modifiedFeature = lastFeature.clone();
+      var modifiedFeature,
+          featureArr,
+          routeArr;
+      
+      map.removeInteraction(draw);
+      
+      modifiedFeature = lastFeature.clone();
 
       modifiedFeature.getGeometry().transform('EPSG:3857', 'EPSG:25832');
 
-      var featureArr = modifiedFeature.getGeometry().getCoordinates();
+      featureArr = modifiedFeature.getGeometry().getCoordinates();
       
-      var routeArr = [featureArr[0],featureArr[featureArr.length-1]];
+      routeArr = [featureArr[0],featureArr[featureArr.length-1]];
       
-      console.log(routeArr);
+      function getAllRoutes() {
+        var deferreds = [];
+       
+        for (var i = 1, top = featureArr.length; i < top; i++) {
+          deferreds.push(
+            $.ajax({
+              url:"http://localhost:3000/api/getRoute",
+              data: {data:[featureArr[i-1], featureArr[i]]},
+              method: "post",
+              dataType:"json",
+              success: function(){
+                console.log("returned")
+              } 
+            })
+          );
+        }
 
-      var pairs = [];
-
-      for(var i = 1, top = featureArr.length; i < top; i++){
-        pairs.push($.post( "http://localhost:3000/api/getRoute", { data: [featureArr[i-1], featureArr[i]] }));
+        return deferreds;
       }
+      
+      $.when.apply($, getAllRoutes()).done(function() {
+        
+        var data = [],
+            formatRoute = new ol.format.WKT(),
+            geom,
+            layerRoute;
+        
+        for(var i = 0; i < arguments.length; i++) {
+          data = data.concat(arguments[i][0]);
+        }
+        
+        source.clear();
+        sourceRoute.clear();
+        
+        geom  = data.map(function (obj) {
+          return obj.st_astext;
+        });
 
-      console.log(pairs);
+        layerRoute = new ol.layer.Vector({
+          source: sourceRoute,
+          style: style 
+        });
 
-      //Promise-based code that returns all pairs
-      $.when.apply($, pairs).then(function(routes) {
-        console.log("DONE", this, routes);
-      }, function(e) {
-        console.log("My ajax failed");
-      });
-
-
-      $.post( "http://localhost:3000/api/getRoute", { data: routeArr })
-        .done(function( data ) {
-            
-          sourceRoute.clear();
-          
-          console.log(data);
-          
-          var formatRoute = new ol.format.WKT(),
-            geom  = data.map(function (obj) {
-              return obj.st_astext;
-            }),
-            layerRoute = new ol.layer.Vector({
-              source: sourceRoute,
-              style: style 
-            });
-
-          geom.forEach(function (feat){
-            var routeFeat = formatRoute.readFeature(feat,{dataProjection:'EPSG:25832',featureProjection:'EPSG:3857'});
-            sourceRoute.addFeature(routeFeat);
-          })
-          
-          map.addLayer(layerRoute);
-            
+        geom.forEach(function (feat){
+          var routeFeat = formatRoute.readFeature(feat, {dataProjection:'EPSG:25832', featureProjection:'EPSG:3857'});
+          sourceRoute.addFeature(routeFeat);
         })
-        .fail(function( err ){console.log(err)});
+        
+        map.addLayer(layerRoute);
+        
+      });
 
   };
 
